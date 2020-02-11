@@ -1,15 +1,4 @@
 #!python3
-"""
-Python 3 wrapper for identifying objects in images
-
-Requires DLL compilation
-
-Original *nix 2.7: https://github.com/pjreddie/darknet/blob/0f110834f4e18b30d5f101bf8f1724c34b7b83db/python/darknet.py
-Windows Python 2.7 version: https://github.com/AlexeyAB/darknet/blob/fc496d52bf22a0bb257300d3c79be9cd80e722cb/build/darknet/x64/darknet.py
-
-@author: Philip Kahn, Aymeric Dujardin
-@date: 20180911
-"""
 # pylint: disable=R, W0401, W0614, W0703
 import os
 import sys
@@ -201,7 +190,7 @@ def array_to_image(arr):
     import numpy as np
     # need to return old values to avoid python freeing memory
     arr = arr.transpose(2, 0, 1)
-    c = arr.shape[0]
+    c = arr.shape[0]  #shape: dimension of the array
     h = arr.shape[1]
     w = arr.shape[2]
     arr = np.ascontiguousarray(arr.flat, dtype=np.float32) / 255.0
@@ -263,7 +252,7 @@ altNames = None
 
 def get_object_depth(depth, bounds):
     '''
-    Calculates the median x, y, z position of top slice(area_div) of point cloud
+    Calculates the y x, y, z position of top slice(area_div) of point cloud
     in camera frame.
     Arguments:
         depth: Point cloud data of whole frame.
@@ -276,7 +265,7 @@ def get_object_depth(depth, bounds):
     Return:
         x, y, z: Location of object in meters.
     '''
-    area_div = 2
+    area_div = 5
 
     x_vect = []
     y_vect = []
@@ -301,16 +290,16 @@ def get_object_depth(depth, bounds):
 
     return x_median, y_median, z_median
 
-
+'''
 def generate_color(meta_path):
-    '''
-    Generate random colors for the number of classes mentioned in data file.
-    Arguments:
-    meta_path: Path to .data file.
+    
+    #Generate random colors for the number of classes mentioned in data file.
+    #Arguments:
+    #meta_path: Path to .data file.
 
-    Return:
-    color_array: RGB color codes for each class.
-    '''
+    #Return:
+    #color_array: RGB color codes for each class.
+    
     random.seed(42)
     with open(meta_path, 'r') as f:
         content = f.readlines()
@@ -319,14 +308,31 @@ def generate_color(meta_path):
     for x in range(0, class_num):
         color_array.append((randint(0, 255), randint(0, 255), randint(0, 255)))
     return color_array
+'''
 
+def do_mosaic(pic, x1, y1, x2, y2, nsize):
+    """
+    :param pic: opencv pic
+    :param int x1, y1 :  coordinate of top left point
+    :param int x2, y2 :  coordinate of button right point
+    :param int nsize:  single mosaic width
+    """
+    x1 = int(x1)
+    y1 = int(y1)
+    x2 = int(x2)
+    y2 = int(y2)
+    re_pic = pic.copy()
+    for i in range(x1, x2, nsize):  
+        for j in range(y1, y2 , nsize):
+            re_pic[j:j+nsize,i:i+nsize] = (np.random.randint(0,255))
+    return re_pic
 
 def main(argv):
 
-    thresh = 0.25
+    thresh = 0.60
     darknet_path="../libdarknet/"
-    config_path = darknet_path + "cfg/yolov3-tiny.cfg"
-    weight_path = "yolov3-tiny.weights"
+    config_path = darknet_path + "cfg/yolov3.cfg"
+    weight_path = "yolov3.weights"
     meta_path = "coco.data"
     svo_path = None
     zed_id = 0
@@ -355,17 +361,13 @@ def main(argv):
         elif opt in ("-z", "--zed_id"):
             zed_id = int(arg)
 
-    input_type = sl.InputType()
+    init = sl.InitParameters()
+    init.coordinate_units = sl.UNIT.UNIT_METER
     if svo_path is not None:
-        log.info("SVO file : " + svo_path)
-        input_type.set_from_svo_file(svo_path)
-    else:
-        # Launch camera by id
-        input_type.set_from_camera_id(zed_id)
+        init.svo_input_filename = svo_path
 
-    init = sl.InitParameters(input_t=input_type)
-    init.coordinate_units = sl.UNIT.METER
-
+    # Launch camera by id
+    init.camera_linux_id = zed_id
     cam = sl.Camera()
     if not cam.is_opened():
         log.info("Opening ZED Camera...")
@@ -376,7 +378,7 @@ def main(argv):
 
     runtime = sl.RuntimeParameters()
     # Use STANDARD sensing mode
-    runtime.sensing_mode = sl.SENSING_MODE.STANDARD
+    runtime.sensing_mode = sl.SENSING_MODE.SENSING_MODE_STANDARD
     mat = sl.Mat()
     point_cloud_mat = sl.Mat()
 
@@ -421,7 +423,7 @@ def main(argv):
         except Exception:
             pass
 
-    color_array = generate_color(meta_path)
+    #color_array = generate_color(meta_path)
 
     log.info("Running...")
 
@@ -430,21 +432,26 @@ def main(argv):
         start_time = time.time() # start time of the loop
         err = cam.grab(runtime)
         if err == sl.ERROR_CODE.SUCCESS:
-            cam.retrieve_image(mat, sl.VIEW.LEFT)
+            cam.retrieve_image(mat, sl.VIEW.VIEW_LEFT)
             image = mat.get_data()
 
             cam.retrieve_measure(
-                point_cloud_mat, sl.MEASURE.XYZRGBA)
+                point_cloud_mat, sl.MEASURE.MEASURE_XYZRGBA)
             depth = point_cloud_mat.get_data()
 
             # Do the detection
             detections = detect(netMain, metaMain, image, thresh)
-
-            log.info(chr(27) + "[2J"+"**** " + str(len(detections)) + " Results ****")
+            person_count = 0
+            log.info(chr(27) + "[2J"+"********  Results ********")
             for detection in detections:
                 label = detection[0]
+                if label != "person":
+                    continue;
+                else:
+                    person_count = person_count + 1
+
                 confidence = detection[1]
-                pstring = label+": "+str(np.rint(100 * confidence))+"%"
+                pstring = label + str(person_count) + ": "+str(np.rint(100 * confidence))+"%"
                 log.info(pstring)
                 bounds = detection[2]
                 y_extent = int(bounds[3])
@@ -457,21 +464,47 @@ def main(argv):
                 x, y, z = get_object_depth(depth, bounds)
                 distance = math.sqrt(x * x + y * y + z * z)
                 distance = "{:.2f}".format(distance)
+
+                
+                x = "{:.2f}".format(x)
+                y = "{:.2f}".format(y)
+                z = "{:.2f}".format(z)
+
                 cv2.rectangle(image, (x_coord - thickness, y_coord - thickness),
                               (x_coord + x_extent + thickness, y_coord + (18 + thickness*4)),
-                              color_array[detection[3]], -1)
-                cv2.putText(image, label + " " +  (str(distance) + " m"),
-                            (x_coord + (thickness * 4), y_coord + (10 + thickness * 4)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                              (255, 0, 0), -1)
+
                 cv2.rectangle(image, (x_coord - thickness, y_coord - thickness),
                               (x_coord + x_extent + thickness, y_coord + y_extent + thickness),
-                              color_array[detection[3]], int(thickness*2))
+                              (255, 0, 0), int(thickness*2))
 
-            cv2.imshow("ZED", image)
+                nsize = 20
+                image = do_mosaic(image, x_coord + nsize, y_coord + nsize, 
+                                  x_coord + x_extent - nsize, y_coord + (18 + thickness*4) + y_extent / 5, 
+                                  nsize)
+
+                cv2.putText(image, label + str(person_count),
+                            (x_coord + (thickness * 4), y_coord + (10 + thickness * 4)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                
+                '''
+                cv2.putText(image, "(" +  (str(x) + "m, ") + (str(y) + "m, ") + (str(z) + "m") + ")",
+                            (int(bounds[0]), int(bounds[1])),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+                '''
+
+            cv2.putText(image, "Numbers of passengers:" +  str(person_count),
+            (int(0), int(30)),
+            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 4)
+
+            cv2.imshow("numbers of person waiting for bus", image)
             key = cv2.waitKey(5)
-            log.info("FPS: {}".format(1.0 / (time.time() - start_time)))
+            video_fps = "FPS: " + str(int(1.0 / (time.time() - start_time)))
+            log.info(video_fps)
         else:
             key = cv2.waitKey(5)
+        log.info(person_count)
+
     cv2.destroyAllWindows()
 
     cam.close()
