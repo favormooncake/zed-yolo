@@ -2,8 +2,6 @@
 
 This package lets you use [YOLO (v2 or v3)](http://pjreddie.com/darknet/yolo/), the deep learning object detector using the ZED stereo camera in Python 3 or C++.
 
-https://github.com/AlexeyAB/darknet
-
 ## 1. Setup
 
 The setup detailed setup instructions are available in the [Darknet repository](https://github.com/AlexeyAB/darknet).
@@ -12,7 +10,7 @@ This is a brief explanation on how to enable the ZED camera support.
 
 ### Prerequisites
 
-- Windows 7 64bits or later, Ubuntu 16.04 or 18.04
+- Ubuntu 16.04 or 18.04
 - [ZED SDK](https://www.stereolabs.com/developers/) and its dependencies ([CUDA](https://developer.nvidia.com/cuda-downloads))
 - **Darknet** : https://github.com/AlexeyAB/darknet and its dependencies ([cuDNN](https://developer.nvidia.com/cudnn) and OpenCV)
 
@@ -47,7 +45,6 @@ sudo bash cmake_apt_update.sh
 [Download](https://github.com/AlexeyAB/darknet) and compile darknet, following the instructions:
 
 - [How to compile on Linux](https://github.com/AlexeyAB/darknet#how-to-compile-on-linux)
-- [How to compile on Windows](https://github.com/AlexeyAB/darknet#how-to-compile-on-windows-using-vcpkg)
 
 ### ZED Support Using CMake (recommended)
 
