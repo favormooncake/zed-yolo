@@ -2,7 +2,7 @@
 
 This package lets you use [YOLO (v2 or v3)](http://pjreddie.com/darknet/yolo/), the deep learning object detector using the ZED stereo camera in Python 3 or C++.
 
-# [Update : the ZED is now natively supported in YOLO !](https://github.com/AlexeyAB/darknet)
+https://github.com/AlexeyAB/darknet
 
 ## 1. Setup
 
