@@ -24,6 +24,12 @@ We will use a fork of darknet from @AlexeyAB : https://github.com/AlexeyAB/darkn
 
 - It is already present in the folder libdarknet
 
+- Before use make command listed below, make sure change GPU and opencv value to 1 (https://pjreddie.com/darknet/install/#cuda), and run
+
+        export PATH=/usr/local/cuda-10.0/bin${PATH:+:${PATH}}
+  
+  to change the path
+        
 - Simply call make in the folder
 
         cd libdarknet
@@ -42,17 +48,17 @@ We will use a fork of darknet from @AlexeyAB : https://github.com/AlexeyAB/darkn
 
 To launch the ZED with YOLO simply run the script :
 
-        python3 darknet_zed.py
+        python3 count.py
 
 
 The input parameters can be changed using the command line :
 
-        python3 darknet_zed.py -c <config> -w <weight> -m <meta> -t <threshold> -s <svo_file>
+        python3 count.py -c <config> -w <weight> -m <meta> -t <threshold> -s <svo_file>
 
 For instance :
 
-        python3 darknet_zed.py -c cfg/yolov3.cfg -w yolov3.weights -m cfg/coco.data -t 0.5
+        python3 count.py -c cfg/yolov3.cfg -w yolov3.weights -m cfg/coco.data -t 0.5
 
 To display the help :
 
-        python3 darknet_zed.py -h
+        python3 count.py -h
